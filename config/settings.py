@@ -16,7 +16,11 @@ from django.contrib.messages import constants as messages
 # BASE DIRECTORY
 # ============================================================
 
+import sys
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+TESTING = "test" in sys.argv
 
 
 # ============================================================
@@ -39,10 +43,29 @@ ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
         "DJANGO_ALLOWED_HOSTS",
-        "127.0.0.1,localhost"
+        "127.0.0.1,localhost,.onrender.com"
     ).split(",")
     if host.strip()
 ]
+
+# Automatically support Render external hostnames
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# Production CSRF Trusted Origins for Render HTTPS requests
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "DJANGO_CSRF_TRUSTED_ORIGINS",
+        "https://*.onrender.com"
+    ).split(",")
+    if origin.strip()
+]
+if RENDER_EXTERNAL_HOSTNAME:
+    render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
+    if render_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_origin)
 
 
 # ============================================================
@@ -221,8 +244,11 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND":
-        "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+            if (DEBUG or TESTING)
+            else "whitenoise.storage.CompressedStaticFilesStorage"
+        ),
     },
 }
 
@@ -277,7 +303,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # PRODUCTION SECURITY
 # ============================================================
 
-if not DEBUG:
+if not DEBUG and not TESTING:
 
     SECURE_PROXY_SSL_HEADER = (
         "HTTP_X_FORWARDED_PROTO",

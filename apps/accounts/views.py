@@ -24,6 +24,21 @@ class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
     redirect_authenticated_user = True
 
+    def dispatch(self, request, *args, **kwargs):
+        # Auto-ensure demo accounts exist if platform has not seeded yet
+        self._ensure_demo_accounts()
+        return super().dispatch(request, *args, **kwargs)
+
+    @staticmethod
+    def _ensure_demo_accounts():
+        from django.contrib.auth.models import User
+        if not User.objects.filter(username='admin').exists():
+            try:
+                from django.core.management import call_command
+                call_command('load_sample_data')
+            except Exception:
+                pass
+
     def form_valid(self, form):
         user = form.get_user()
         login(self.request, user)
@@ -38,6 +53,13 @@ class CustomLoginView(LoginView):
         return redirect(self.get_success_url())
 
     def form_invalid(self, form):
+        username = (self.request.POST.get('username') or '').strip()
+        if username in ('admin', 'hr_abctech', 'hr_mvgr', 'hr_citycare'):
+            try:
+                from django.core.management import call_command
+                call_command('load_sample_data')
+            except Exception:
+                pass
         messages.error(self.request, "Invalid username or password. Please check your credentials.")
         return super().form_invalid(form)
 

@@ -29,14 +29,18 @@ class Command(BaseCommand):
                 'last_name': 'SuperAdmin',
                 'is_staff': True,
                 'is_superuser': True,
+                'is_active': True,
             }
         )
+        admin_user.is_staff = True
+        admin_user.is_superuser = True
+        admin_user.is_active = True
+        admin_user.set_password('admin123')
+        admin_user.save()
         if created:
-            admin_user.set_password('admin123')
-            admin_user.save()
             self.stdout.write(self.style.SUCCESS("  [+] Created superuser: 'admin' (password: 'admin123')"))
         else:
-            self.stdout.write("  [*] Superuser 'admin' already exists.")
+            self.stdout.write("  [*] Reset superuser 'admin' (password: 'admin123').")
 
         # 2. Organization 1: ABC Technologies (Company)
         abc_org, _ = Organization.objects.get_or_create(
@@ -90,15 +94,18 @@ class Command(BaseCommand):
                     'last_name': last_name,
                 }
             )
-            if created:
-                u.set_password('admin123')
-                u.save()
+            u.is_active = True
+            u.set_password('admin123')
+            u.save()
 
-            OrganizationMembership.objects.get_or_create(
+            membership, _ = OrganizationMembership.objects.get_or_create(
                 user=u,
                 organization=org,
                 defaults={'role': role, 'is_default': True}
             )
+            membership.role = role
+            membership.is_active = True
+            membership.save()
             return u
 
         hr_abc = create_tenant_user('hr_abctech', 'hr@abctech.com', 'David', 'Miller', abc_org, Role.HR_ADMIN)

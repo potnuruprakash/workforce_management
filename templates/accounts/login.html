@@ -94,6 +94,27 @@
             padding: 1rem;
             margin-top: 1.5rem;
         }
+        .demo-cred-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            margin-bottom: 0.35rem;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .demo-cred-row:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+        .demo-fill-btn {
+            font-size: 0.72rem;
+            padding: 0.15rem 0.5rem;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -164,13 +185,25 @@
                 <span class="fw-bold fs-9 text-secondary text-uppercase tracking-wider">
                     <i class="bi bi-shield-check text-primary me-1"></i> Demo Environments
                 </span>
-                <span class="badge bg-secondary-subtle text-secondary fs-9">Dev Only</span>
+                <span class="badge bg-primary-subtle text-primary fs-9">Click to Fill</span>
             </div>
-            <div class="font-monospace fs-9 text-secondary">
-                <div class="mb-1">&bull; <strong>Platform Admin:</strong> <code>admin</code> / <code>admin123</code></div>
-                <div class="mb-1">&bull; <strong>ABC Tech HR:</strong> <code>hr_abctech</code> / <code>admin123</code></div>
-                <div class="mb-1">&bull; <strong>MVGR College HR:</strong> <code>hr_mvgr</code> / <code>admin123</code></div>
-                <div>&bull; <strong>Hospital HR:</strong> <code>hr_citycare</code> / <code>admin123</code></div>
+            <div class="fs-9 text-secondary">
+                <div class="demo-cred-row" data-username="admin" data-password="admin123" title="Click to fill credentials">
+                    <div><i class="bi bi-person-fill text-primary me-1"></i><strong>Platform Admin:</strong> <code class="text-dark">admin</code> / <code>admin123</code></div>
+                    <button type="button" class="btn btn-sm btn-outline-primary demo-fill-btn">Fill</button>
+                </div>
+                <div class="demo-cred-row" data-username="hr_abctech" data-password="admin123" title="Click to fill credentials">
+                    <div><i class="bi bi-building text-primary me-1"></i><strong>ABC Tech HR:</strong> <code class="text-dark">hr_abctech</code> / <code>admin123</code></div>
+                    <button type="button" class="btn btn-sm btn-outline-primary demo-fill-btn">Fill</button>
+                </div>
+                <div class="demo-cred-row" data-username="hr_mvgr" data-password="admin123" title="Click to fill credentials">
+                    <div><i class="bi bi-mortarboard text-primary me-1"></i><strong>MVGR College HR:</strong> <code class="text-dark">hr_mvgr</code> / <code>admin123</code></div>
+                    <button type="button" class="btn btn-sm btn-outline-primary demo-fill-btn">Fill</button>
+                </div>
+                <div class="demo-cred-row" data-username="hr_citycare" data-password="admin123" title="Click to fill credentials">
+                    <div><i class="bi bi-hospital text-primary me-1"></i><strong>Hospital HR:</strong> <code class="text-dark">hr_citycare</code> / <code>admin123</code></div>
+                    <button type="button" class="btn btn-sm btn-outline-primary demo-fill-btn">Fill</button>
+                </div>
             </div>
         </div>
     </div>
@@ -190,6 +223,20 @@ document.querySelectorAll('.password-toggle-btn').forEach(function (btn) {
                 input.type = 'password';
                 icon.classList.replace('bi-eye-slash', 'bi-eye');
             }
+        }
+    });
+});
+
+document.querySelectorAll('.demo-cred-row').forEach(function (row) {
+    row.addEventListener('click', function () {
+        const u = this.getAttribute('data-username');
+        const p = this.getAttribute('data-password');
+        const userInput = document.getElementById('login-username');
+        const passInput = document.getElementById('login-password');
+        if (userInput && passInput) {
+            userInput.value = u;
+            passInput.value = p;
+            passInput.focus();
         }
     });
 });
