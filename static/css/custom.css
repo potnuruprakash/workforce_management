@@ -1,0 +1,835 @@
+/* ==========================================================================
+   WORKFORCE OS — ENTERPRISE SAAS DESIGN SYSTEM
+   Professional, Minimal, Accessible, and Mobile-First
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    /* Brand & Primary */
+    --wf-primary: #2563eb;
+    --wf-primary-hover: #1d4ed8;
+    --wf-primary-subtle: #eff6ff;
+    --wf-primary-border: #bfdbfe;
+
+    /* Neutrals */
+    --wf-body-bg: #f8fafc;
+    --wf-surface: #ffffff;
+    --wf-surface-subtle: #f1f5f9;
+    --wf-border: #e2e8f0;
+    --wf-border-focus: #93c5fd;
+
+    /* Typography */
+    --wf-text-main: #0f172a;
+    --wf-text-muted: #475569;
+    --wf-text-secondary: #64748b;
+    --wf-text-tertiary: #94a3b8;
+
+    /* Semantic Status */
+    --wf-success: #16a34a;
+    --wf-success-bg: #dcfce7;
+    --wf-success-text: #14532d;
+
+    --wf-warning: #d97706;
+    --wf-warning-bg: #fef3c7;
+    --wf-warning-text: #78350f;
+
+    --wf-danger: #dc2626;
+    --wf-danger-bg: #fee2e2;
+    --wf-danger-text: #7f1d1d;
+
+    --wf-info: #0284c7;
+    --wf-info-bg: #e0f2fe;
+    --wf-info-text: #075985;
+
+    /* Elevations */
+    --wf-shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+    --wf-shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
+    --wf-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+    --wf-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+
+    /* Layout Dimensions */
+    --wf-sidebar-width: 256px;
+    --wf-header-height: 64px;
+}
+
+/* Reset & Base */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--wf-body-bg);
+    color: var(--wf-text-main);
+    font-size: 0.9375rem; /* 15px base */
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+/* Global Typography Hierarchy */
+h1, .h1 { font-size: 1.625rem; font-weight: 700; letter-spacing: -0.025em; color: var(--wf-text-main); margin-bottom: 0.25rem; }
+h2, .h2 { font-size: 1.375rem; font-weight: 700; letter-spacing: -0.02em; color: var(--wf-text-main); }
+h3, .h3 { font-size: 1.1875rem; font-weight: 600; letter-spacing: -0.015em; color: var(--wf-text-main); }
+h4, .h4 { font-size: 1.0625rem; font-weight: 600; color: var(--wf-text-main); }
+h5, .h5 { font-size: 0.9375rem; font-weight: 600; color: var(--wf-text-main); }
+p { color: var(--wf-text-muted); }
+.text-secondary { color: var(--wf-text-secondary) !important; }
+.text-tertiary { color: var(--wf-text-tertiary) !important; }
+
+/* Micro-fonts */
+.fs-7 { font-size: 0.875rem !important; }
+.fs-8 { font-size: 0.8125rem !important; }
+.fs-9 { font-size: 0.75rem !important; }
+
+/* ==========================================================================
+   DESKTOP & MOBILE APPLICATION SHELL
+   ========================================================================== */
+
+#app-container {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* Clean, Modern Enterprise Light Sidebar (Desktop >= 992px) */
+.desktop-sidebar {
+    width: var(--wf-sidebar-width);
+    background-color: #ffffff;
+    color: var(--wf-text-muted);
+    flex-shrink: 0;
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 1040;
+    border-right: 1px solid var(--wf-border);
+}
+
+@media (min-width: 992px) {
+    .desktop-sidebar {
+        display: flex;
+    }
+}
+
+/* Sidebar Branding (Aligned with Header Height) */
+.sidebar-brand {
+    height: var(--wf-header-height);
+    padding: 0 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--wf-border);
+    background-color: #ffffff;
+    flex-shrink: 0;
+}
+
+.brand-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 1.15rem;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    flex-shrink: 0;
+}
+
+.brand-title {
+    color: var(--wf-text-main);
+    font-weight: 700;
+    font-size: 1.05rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+.brand-subtitle {
+    font-size: 0.7rem;
+    color: var(--wf-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+}
+
+/* Sidebar Navigation Group Labels */
+.nav-group-label {
+    padding: 1.25rem 1.25rem 0.35rem 1.25rem;
+    font-size: 0.6875rem; /* 11px */
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+}
+
+/* Modern SaaS Navigation Links (Refined Pill with Left Indicator Bar) */
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 0.62rem 0.95rem;
+    margin: 2px 10px;
+    border-radius: 8px;
+    color: #475569;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.88rem;
+    transition: all 0.15s ease-in-out;
+}
+
+.sidebar-link i {
+    font-size: 1.1rem;
+    margin-right: 0.75rem;
+    width: 22px;
+    text-align: center;
+    color: #64748b;
+    transition: color 0.15s ease;
+}
+
+.sidebar-link:hover {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+.sidebar-link:hover i {
+    color: var(--wf-primary);
+}
+
+.sidebar-link.active {
+    background-color: #eff6ff; /* Clean soft blue pill */
+    color: #1d4ed8;
+    font-weight: 600;
+    border-left: 3px solid #2563eb;
+    border-radius: 0 8px 8px 0;
+    margin-left: 0;
+    padding-left: 1.25rem;
+}
+
+.sidebar-link.active i {
+    color: #2563eb;
+}
+
+/* Sidebar Footer (Active Organization & Role) */
+.sidebar-footer {
+    margin-top: auto;
+    padding: 0.9rem 1.15rem;
+    border-top: 1px solid var(--wf-border);
+    background-color: #f8fafc;
+    flex-shrink: 0;
+}
+
+/* Mobile Offcanvas Drawer (Matches Clean Light Theme) */
+.offcanvas.mobile-drawer {
+    width: 280px;
+    background-color: #ffffff;
+    color: #475569;
+    border-right: 1px solid var(--wf-border);
+}
+
+.mobile-drawer .sidebar-brand {
+    border-bottom: 1px solid var(--wf-border);
+}
+
+.offcanvas-backdrop.show {
+    opacity: 0.5;
+    backdrop-filter: blur(2px);
+}
+
+/* ==========================================================================
+   FIXED TOP NAVIGATION BAR & MAIN WORKSPACE
+   ========================================================================== */
+
+.main-shell {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background-color: var(--wf-body-bg);
+    min-height: 100vh;
+    padding-top: var(--wf-header-height); /* Essential: prevents content from hiding under fixed navbar */
+}
+
+@media (min-width: 992px) {
+    .main-shell {
+        margin-left: var(--wf-sidebar-width); /* Essential: desktop fixed sidebar offset */
+    }
+}
+
+/* Truly Fixed Top Navigation Bar */
+.top-header {
+    height: var(--wf-header-height);
+    background-color: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--wf-border);
+    padding: 0 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+}
+
+@media (min-width: 992px) {
+    .top-header {
+        left: var(--wf-sidebar-width);
+        padding: 0 2rem;
+    }
+}
+
+/* Organization Switcher Chip */
+.org-chip-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.38rem 0.8rem;
+    background-color: var(--wf-surface-subtle);
+    border: 1px solid var(--wf-border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--wf-text-main);
+    transition: all 0.15s ease;
+    max-width: 240px;
+}
+
+.org-chip-btn:hover {
+    background-color: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+@media (max-width: 576px) {
+    .org-chip-btn {
+        max-width: 140px;
+    }
+}
+
+/* Avatar Components */
+.avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    font-weight: 600;
+}
+
+.avatar-xs { width: 28px; height: 28px; font-size: 0.75rem; }
+.avatar-sm { width: 36px; height: 36px; font-size: 0.825rem; }
+.avatar-md { width: 48px; height: 48px; font-size: 1rem; }
+.avatar-lg { width: 80px; height: 80px; font-size: 1.75rem; }
+.avatar-xl { width: 100px; height: 100px; font-size: 2.25rem; }
+
+.avatar-initials {
+    background-color: #e2e8f0;
+    color: #334155;
+}
+
+.avatar-initials-primary {
+    background-color: var(--wf-primary-subtle);
+    color: var(--wf-primary);
+    border: 1px solid var(--wf-primary-border);
+}
+
+/* Main Content Workspace */
+.page-workspace {
+    padding: 1.5rem 1rem;
+    flex-grow: 1;
+}
+
+@media (min-width: 768px) {
+    .page-workspace {
+        padding: 2rem 1.75rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .page-workspace {
+        padding: 2.25rem 2.5rem;
+    }
+}
+
+/* ==========================================================================
+   CARDS & ENTERPRISE SURFACES
+   ========================================================================== */
+
+.saas-card {
+    background: var(--wf-surface);
+    border: 1px solid var(--wf-border);
+    border-radius: 12px;
+    box-shadow: var(--wf-shadow-xs);
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.saas-card:hover {
+    border-color: #cbd5e1;
+}
+
+.saas-card-header {
+    padding: 1rem 1.25rem;
+    background-color: var(--wf-surface);
+    border-bottom: 1px solid var(--wf-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.saas-card-body {
+    padding: 1.25rem;
+}
+
+/* KPI Metric Cards */
+.metric-card {
+    background: var(--wf-surface);
+    border: 1px solid var(--wf-border);
+    border-radius: 12px;
+    padding: 1.15rem;
+    box-shadow: var(--wf-shadow-xs);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--wf-shadow-md);
+    border-color: #cbd5e1;
+}
+
+.metric-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.metric-number {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--wf-text-main);
+    letter-spacing: -0.03em;
+    margin: 0.5rem 0 0.25rem 0;
+}
+
+/* ==========================================================================
+   STATUS BADGES & INDICATOR DOTS
+   ========================================================================== */
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Active */
+.status-badge-active {
+    background-color: var(--wf-success-bg);
+    color: var(--wf-success-text);
+}
+.status-badge-active .status-dot { background-color: var(--wf-success); }
+
+/* On Leave */
+.status-badge-leave {
+    background-color: var(--wf-warning-bg);
+    color: var(--wf-warning-text);
+}
+.status-badge-leave .status-dot { background-color: var(--wf-warning); }
+
+/* Resigned / Retired */
+.status-badge-resigned, .status-badge-retired {
+    background-color: var(--wf-surface-subtle);
+    color: var(--wf-text-muted);
+}
+.status-badge-resigned .status-dot, .status-badge-retired .status-dot { background-color: var(--wf-text-secondary); }
+
+/* Terminated / Archived */
+.status-badge-terminated, .status-badge-archived {
+    background-color: var(--wf-danger-bg);
+    color: var(--wf-danger-text);
+}
+.status-badge-terminated .status-dot, .status-badge-archived .status-dot { background-color: var(--wf-danger); }
+
+/* Soft Categorical Pills */
+.pill-neutral { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.pill-primary { background-color: var(--wf-primary-subtle); color: var(--wf-primary); border: 1px solid var(--wf-primary-border); }
+
+/* ==========================================================================
+   DATA TABLES & RESPONSIVE MOBILE CARDS
+   ========================================================================== */
+
+.saas-table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.saas-table th {
+    background-color: #f8fafc;
+    color: var(--wf-text-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--wf-border);
+    border-top: none;
+    white-space: nowrap;
+}
+
+.saas-table td {
+    padding: 1rem 1.25rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--wf-border);
+    font-size: 0.9rem;
+    color: var(--wf-text-main);
+    background-color: #ffffff;
+}
+
+.saas-table tbody tr:hover td {
+    background-color: #f8fafc;
+}
+
+.saas-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Mobile Employee Card Component */
+.mobile-employee-card {
+    background: #ffffff;
+    border: 1px solid var(--wf-border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    box-shadow: var(--wf-shadow-xs);
+    transition: all 0.15s ease;
+}
+
+.mobile-employee-card:active {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.mobile-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--wf-border);
+}
+
+/* ==========================================================================
+   FORMS & CONTROLS (ACCESSIBLE & MOBILE-FIRST)
+   ========================================================================== */
+
+.form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--wf-text-main);
+    margin-bottom: 0.35rem;
+}
+
+.form-label .required {
+    color: var(--wf-danger);
+    margin-left: 2px;
+}
+
+.form-control, .form-select {
+    font-size: 0.92rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    color: var(--wf-text-main);
+    background-color: #ffffff;
+    min-height: 44px; /* Mobile touch friendly */
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--wf-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    outline: none;
+}
+
+.form-text {
+    font-size: 0.78rem;
+    color: var(--wf-text-secondary);
+    margin-top: 0.25rem;
+}
+
+/* ==========================================================================
+   BUTTONS & ACTIONS
+   ========================================================================== */
+
+.btn {
+    font-size: 0.88rem;
+    font-weight: 600;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 40px;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-primary {
+    background-color: var(--wf-primary);
+    border-color: var(--wf-primary);
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--wf-primary-hover);
+    border-color: var(--wf-primary-hover);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+}
+
+.btn-secondary {
+    background-color: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #334155;
+}
+
+.btn-secondary:hover {
+    background-color: #e2e8f0;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.btn-outline-secondary {
+    border-color: #cbd5e1;
+    color: #475569;
+    background-color: #ffffff;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+.btn-danger {
+    background-color: var(--wf-danger);
+    border-color: var(--wf-danger);
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.btn-icon {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   FLOATING TOAST NOTIFICATIONS
+   ========================================================================== */
+
+.toast-container-custom {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 1090;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 380px;
+    width: calc(100% - 2rem);
+}
+
+@media (max-width: 576px) {
+    .toast-container-custom {
+        top: 1rem;
+        bottom: auto;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+    }
+}
+
+.saas-toast {
+    background: #ffffff;
+    border: 1px solid var(--wf-border);
+    border-radius: 10px;
+    box-shadow: var(--wf-shadow-lg);
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes toastSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   EMPTY STATES
+   ========================================================================== */
+
+.empty-state {
+    padding: 3.5rem 1.5rem;
+    text-align: center;
+    background: #ffffff;
+    border-radius: 12px;
+}
+
+.empty-state-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background-color: var(--wf-surface-subtle);
+    color: var(--wf-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 1.25rem auto;
+}
+
+.empty-state-title {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--wf-text-main);
+    margin-bottom: 0.35rem;
+}
+
+.empty-state-text {
+    font-size: 0.9rem;
+    color: var(--wf-text-secondary);
+    max-width: 380px;
+    margin: 0 auto 1.5rem auto;
+}
+
+/* ==========================================================================
+   MODALS & CONFIRMATION
+   ========================================================================== */
+
+.modal-content {
+    border-radius: 14px;
+    border: 1px solid var(--wf-border);
+    box-shadow: var(--wf-shadow-lg);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--wf-border);
+    padding: 1.15rem 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--wf-border);
+    padding: 1rem 1.5rem;
+    background-color: #fafbfc;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+}
+
+/* ==========================================================================
+   BREADCRUMBS & SECTION TABS
+   ========================================================================== */
+
+.saas-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--wf-text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.saas-breadcrumb a {
+    color: var(--wf-text-secondary);
+    text-decoration: none;
+}
+
+.saas-breadcrumb a:hover {
+    color: var(--wf-primary);
+}
+
+/* Horizontal Scrollable Tabs for Mobile */
+.saas-tabs-wrapper {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    border-bottom: 1px solid var(--wf-border);
+    margin-bottom: 1.5rem;
+}
+
+.saas-tabs {
+    display: inline-flex;
+    gap: 0.5rem;
+    padding-bottom: 1px;
+}
+
+.saas-tab-btn {
+    padding: 0.65rem 1rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--wf-text-secondary);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.saas-tab-btn:hover {
+    color: var(--wf-text-main);
+}
+
+.saas-tab-btn.active {
+    color: var(--wf-primary);
+    border-bottom-color: var(--wf-primary);
+}

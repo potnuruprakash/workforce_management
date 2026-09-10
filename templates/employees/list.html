@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+
+{% block title %}Staff Directory — {{ organization.name }} — Workforce OS{% endblock %}
+
+{% block content %}
+<!-- Page Header & Action Controls -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="saas-breadcrumb d-none d-md-flex">
+            <span>{{ organization.name }}</span>
+            <i class="bi bi-chevron-right fs-9"></i>
+            <span class="text-dark fw-semibold">Staff Directory</span>
+        </div>
+        <h1 class="h2 mb-1">Employees & Personnel</h1>
+        <p class="text-secondary fs-8 mb-0">Active roster, departments, assignments, and personnel records.</p>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 w-100 w-md-auto">
+        <!-- Mobile Filter Button (triggers mobile offcanvas/modal) -->
+        <button class="btn btn-outline-secondary d-md-none flex-grow-1" type="button" data-bs-toggle="modal" data-bs-target="#mobileFilterModal">
+            <i class="bi bi-funnel"></i> Filters
+            {% if query or selected_dept or selected_status %}
+            <span class="badge bg-primary text-white ms-1 fs-9">Active</span>
+            {% endif %}
+        </button>
+
+        {% if is_org_admin %}
+        <a href="{% url 'employees:create' %}" class="btn btn-primary flex-grow-1 flex-md-grow-0">
+            <i class="bi bi-plus-lg"></i> Add Employee
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Scope Pills (Active / Archived / All) -->
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <div class="btn-group btn-group-sm" role="group" aria-label="View scope">
+        <a href="?view_scope=active{% if query %}&q={{ query }}{% endif %}{% if selected_dept %}&department={{ selected_dept }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}"
+           class="btn {% if view_scope == 'active' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+           Active Staff <span class="badge {% if view_scope == 'active' %}bg-white text-primary{% else %}bg-secondary-subtle text-secondary{% endif %} ms-1">{{ total_active }}</span>
+        </a>
+        <a href="?view_scope=archived{% if query %}&q={{ query }}{% endif %}{% if selected_dept %}&department={{ selected_dept }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}"
+           class="btn {% if view_scope == 'archived' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+           Archived / Alumni <span class="badge {% if view_scope == 'archived' %}bg-white text-primary{% else %}bg-secondary-subtle text-secondary{% endif %} ms-1">{{ total_archived }}</span>
+        </a>
+        <a href="?view_scope=all{% if query %}&q={{ query }}{% endif %}{% if selected_dept %}&department={{ selected_dept }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}"
+           class="btn {% if view_scope == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+           All Records
+        </a>
+    </div>
+
+    <div class="fs-8 text-secondary">
+        Showing <strong>{{ page_obj.paginator.count }}</strong> record{{ page_obj.paginator.count|pluralize }}
+    </div>
+</div>
+
+<!-- ====================================================================
+     1. DESKTOP SEARCH & INLINE FILTER BAR (Visible on >= 768px)
+     ==================================================================== -->
+<div class="saas-card d-none d-md-block mb-3">
+    <div class="p-3">
+        <form method="GET" class="row g-2 align-items-center">
+            <input type="hidden" name="view_scope" value="{{ view_scope }}">
+
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-secondary"></i></span>
+                    <input type="text" name="q" value="{{ query }}" class="form-control border-start-0" placeholder="Search by name, ID, email, designation...">
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <select name="department" class="form-select">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.pk }}" {% if selected_dept == dept.pk|stringformat:"i" %}selected{% endif %}>{{ dept.name }} ({{ dept.code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All Employment Statuses</option>
+                    {% for code, label in status_choices %}
+                    <option value="{{ code }}" {% if selected_status == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Apply</button>
+                {% if query or selected_dept or selected_status %}
+                <a href="{% url 'employees:list' %}?view_scope={{ view_scope }}" class="btn btn-outline-secondary btn-icon" data-bs-toggle="tooltip" title="Clear Filters">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ====================================================================
+     2. DIRECTORY DATA PRESENTATION (Dual Presentation)
+     ==================================================================== -->
+
+<!-- DESKTOP TABLE VIEW (>= 768px) -->
+<div class="saas-card d-none d-md-block">
+    <div class="table-responsive">
+        <table class="saas-table">
+            <thead>
+                <tr>
+                    <th>Personnel</th>
+                    <th>ID</th>
+                    <th>Department</th>
+                    <th>Designation</th>
+                    <th>Contact Phone</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in page_obj %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if emp.profile_photo %}
+                            <img src="{{ emp.profile_photo.url }}" alt="{{ emp.full_name }}" class="avatar avatar-sm border">
+                            {% else %}
+                            <div class="avatar avatar-sm avatar-initials">{{ emp.full_name|make_list|first|upper }}</div>
+                            {% endif %}
+                            <div>
+                                <a href="{% url 'employees:detail' emp.pk %}" class="fw-semibold text-dark text-decoration-none">
+                                    {{ emp.full_name }}
+                                </a>
+                                <div class="text-secondary fs-9">{{ emp.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><code>{{ emp.employee_id }}</code></td>
+                    <td><span class="status-badge pill-neutral fs-9">{{ emp.department.name }}</span></td>
+                    <td class="fs-8 text-dark">{{ emp.designation }}</td>
+                    <td class="fs-8 text-secondary font-monospace">{{ emp.phone_number }}</td>
+                    <td>
+                        {% if emp.is_archived %}
+                        <span class="status-badge status-badge-archived fs-9"><span class="status-dot"></span> Archived</span>
+                        {% elif emp.employment_status == 'ACTIVE' %}
+                        <span class="status-badge status-badge-active fs-9"><span class="status-dot"></span> Active</span>
+                        {% elif emp.employment_status == 'ON_LEAVE' %}
+                        <span class="status-badge status-badge-leave fs-9"><span class="status-dot"></span> On Leave</span>
+                        {% elif emp.employment_status == 'RESIGNED' %}
+                        <span class="status-badge status-badge-resigned fs-9"><span class="status-dot"></span> Resigned</span>
+                        {% elif emp.employment_status == 'RETIRED' %}
+                        <span class="status-badge status-badge-retired fs-9"><span class="status-dot"></span> Retired</span>
+                        {% else %}
+                        <span class="status-badge status-badge-terminated fs-9"><span class="status-dot"></span> {{ emp.get_employment_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'employees:detail' emp.pk %}" class="btn btn-outline-secondary btn-icon" data-bs-toggle="tooltip" title="View Profile">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if is_org_admin %}
+                            <a href="{% url 'employees:edit' emp.pk %}" class="btn btn-outline-secondary btn-icon" data-bs-toggle="tooltip" title="Edit Employee">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% if not emp.is_archived %}
+                            <a href="{% url 'employees:archive' emp.pk %}" class="btn btn-outline-secondary btn-icon text-warning" data-bs-toggle="tooltip" title="Archive Record">
+                                <i class="bi bi-archive"></i>
+                            </a>
+                            {% else %}
+                            <button type="button" class="btn btn-outline-secondary btn-icon text-success"
+                                data-bs-toggle="modal"
+                                data-bs-target="#actionConfirmModal"
+                                data-action-url="{% url 'employees:restore' emp.pk %}"
+                                data-action-title="Restore Employee"
+                                data-action-message="Restore <strong>{{ emp.full_name }}</strong> back to Active directory?"
+                                data-action-btn-text="Restore Employee"
+                                data-action-btn-class="btn-success"
+                                data-bs-tooltip="tooltip"
+                                title="Restore Employee">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="bi bi-person-x"></i>
+                            </div>
+                            <div class="empty-state-title">No employees found</div>
+                            <div class="empty-state-text">
+                                No staff records matched your search query or filter criteria. Try resetting your search filters.
+                            </div>
+                            {% if query or selected_dept or selected_status %}
+                            <a href="{% url 'employees:list' %}?view_scope={{ view_scope }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Clear Filters
+                            </a>
+                            {% elif is_org_admin %}
+                            <a href="{% url 'employees:create' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-lg"></i> Add First Employee
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MOBILE CARDS VIEW (< 768px) -->
+<div class="d-md-none">
+    {% for emp in page_obj %}
+    <div class="mobile-employee-card">
+        <div class="d-flex align-items-start gap-3">
+            {% if emp.profile_photo %}
+            <img src="{{ emp.profile_photo.url }}" alt="{{ emp.full_name }}" class="avatar avatar-md border">
+            {% else %}
+            <div class="avatar avatar-md avatar-initials">{{ emp.full_name|make_list|first|upper }}</div>
+            {% endif %}
+
+            <div class="flex-grow-1 overflow-hidden">
+                <div class="d-flex align-items-center justify-content-between">
+                    <a href="{% url 'employees:detail' emp.pk %}" class="fw-bold text-dark fs-7 text-decoration-none text-truncate">
+                        {{ emp.full_name }}
+                    </a>
+                    {% if emp.is_archived %}
+                    <span class="status-badge status-badge-archived fs-9"><span class="status-dot"></span></span>
+                    {% elif emp.employment_status == 'ACTIVE' %}
+                    <span class="status-badge status-badge-active fs-9"><span class="status-dot"></span></span>
+                    {% else %}
+                    <span class="status-badge status-badge-leave fs-9"><span class="status-dot"></span></span>
+                    {% endif %}
+                </div>
+                <div class="text-secondary fs-9 mt-1">
+                    <code>{{ emp.employee_id }}</code> &bull; {{ emp.department.name }}
+                </div>
+                <div class="text-dark fs-8 fw-medium mt-1">{{ emp.designation }}</div>
+            </div>
+        </div>
+
+        <div class="mobile-card-actions">
+            <a href="{% url 'employees:detail' emp.pk %}" class="btn btn-sm btn-outline-secondary flex-grow-1 fs-9">
+                <i class="bi bi-person"></i> View Profile
+            </a>
+            {% if is_org_admin %}
+            <a href="{% url 'employees:edit' emp.pk %}" class="btn btn-sm btn-outline-secondary fs-9 px-3">
+                <i class="bi bi-pencil"></i>
+            </a>
+            {% if not emp.is_archived %}
+            <a href="{% url 'employees:archive' emp.pk %}" class="btn btn-sm btn-outline-secondary text-warning fs-9 px-3">
+                <i class="bi bi-archive"></i>
+            </a>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="bi bi-person-x"></i>
+        </div>
+        <div class="empty-state-title">No employees found</div>
+        <div class="empty-state-text">No staff records match your current criteria.</div>
+        {% if query or selected_dept or selected_status %}
+        <a href="{% url 'employees:list' %}?view_scope={{ view_scope }}" class="btn btn-secondary">Clear Filters</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ====================================================================
+     3. PAGINATION CONTROLS
+     ==================================================================== -->
+{% if page_obj.has_other_pages %}
+<nav class="mt-4" aria-label="Page navigation">
+    <ul class="pagination justify-content-center flex-wrap gap-1">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link rounded-2" href="?page={{ page_obj.previous_page_number }}&view_scope={{ view_scope }}{% if query %}&q={{ query }}{% endif %}{% if selected_dept %}&department={{ selected_dept }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">
+                &larr; Prev
+            </a>
+        </li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link rounded-2">{{ num }}</span></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link rounded-2" href="?page={{ num }}&view_scope={{ view_scope }}{% if query %}&q={{ query }}{% endif %}{% if selected_dept %}&department={{ selected_dept }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link rounded-2" href="?page={{ page_obj.next_page_number }}&view_scope={{ view_scope }}{% if query %}&q={{ query }}{% endif %}{% if selected_dept %}&department={{ selected_dept }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">
+                Next &rarr;
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- ====================================================================
+     4. MOBILE FILTER MODAL (Bottom Sheet UX for Mobile)
+     ==================================================================== -->
+<div class="modal fade" id="mobileFilterModal" tabindex="-1" aria-labelledby="mobileFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="GET" action="{% url 'employees:list' %}">
+                <input type="hidden" name="view_scope" value="{{ view_scope }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fs-6 fw-bold" id="mobileFilterModalLabel"><i class="bi bi-funnel me-1 text-primary"></i> Filter Directory</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Search Query</label>
+                        <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search by name, ID, or email...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <select name="department" class="form-select">
+                            <option value="">All Departments</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.pk }}" {% if selected_dept == dept.pk|stringformat:"i" %}selected{% endif %}>{{ dept.name }} ({{ dept.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Employment Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">All Statuses</option>
+                            {% for code, label in status_choices %}
+                            <option value="{{ code }}" {% if selected_status == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="{% url 'employees:list' %}?view_scope={{ view_scope }}" class="btn btn-secondary">Reset</a>
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

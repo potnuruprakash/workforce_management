@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Profile — Workforce OS{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="saas-breadcrumb d-none d-md-flex">
+            <span>Account</span>
+            <i class="bi bi-chevron-right fs-9"></i>
+            <span class="text-dark fw-semibold">User Profile</span>
+        </div>
+        <h1 class="h2 mb-1">Account & Memberships</h1>
+        <p class="text-secondary fs-8 mb-0">Manage credentials, active institutional memberships, and role assignments.</p>
+    </div>
+    <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-shield-lock"></i> Security & Password
+    </a>
+</div>
+
+<div class="row g-3 g-md-4">
+    <!-- User Profile Form -->
+    <div class="col-lg-5">
+        <div class="saas-card h-100">
+            <div class="saas-card-header">
+                <h5 class="mb-0 fs-7 fw-bold"><i class="bi bi-person me-2 text-primary"></i>Personal Information</h5>
+            </div>
+            <div class="saas-card-body p-3 p-md-4">
+                <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                    <div class="avatar avatar-lg avatar-initials-primary fs-3">
+                        {{ request.user.username|make_list|first|upper }}
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0 text-dark">{{ request.user.get_full_name|default:request.user.username }}</h4>
+                        <div class="text-secondary fs-8">Username: <code>{{ request.user.username }}</code></div>
+                        <span class="status-badge status-badge-active fs-9 mt-1"><span class="status-dot"></span> {{ active_role|default:"Platform Admin" }}</span>
+                    </div>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">First Name</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Last Name</label>
+                        {{ form.last_name }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Address <span class="required">*</span></label>
+                        {{ form.email }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mt-2">
+                        <i class="bi bi-check2"></i> Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Organization Memberships -->
+    <div class="col-lg-7">
+        <div class="saas-card mb-4">
+            <div class="saas-card-header">
+                <div>
+                    <h5 class="mb-0 fs-7 fw-bold"><i class="bi bi-buildings me-2 text-primary"></i>Institutional Memberships</h5>
+                    <div class="fs-9 text-secondary">Organizations and roles associated with your account</div>
+                </div>
+                <span class="status-badge pill-neutral fs-9">{{ memberships.count }} Assigned</span>
+            </div>
+            <div class="saas-card-body p-0">
+                <div class="table-responsive">
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Organization</th>
+                                <th>Type</th>
+                                <th>Assigned Role</th>
+                                <th>Context</th>
+                                <th class="text-end">Switch</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in memberships %}
+                            <tr>
+                                <td class="fw-semibold fs-8">{{ m.organization.name }}</td>
+                                <td><span class="status-badge pill-neutral fs-9">{{ m.organization.get_organization_type_display }}</span></td>
+                                <td><span class="status-badge pill-primary fs-9">{{ m.get_role_display }}</span></td>
+                                <td>
+                                    {% if active_organization.id == m.organization.id %}
+                                    <span class="status-badge status-badge-active fs-9"><span class="status-dot"></span> Active</span>
+                                    {% else %}
+                                    <span class="text-secondary fs-9">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if active_organization.id != m.organization.id %}
+                                    <a href="{% url 'accounts:switch_org' m.organization.id %}" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-9">
+                                        Switch
+                                    </a>
+                                    {% else %}
+                                    <span class="text-success fs-9 fw-semibold"><i class="bi bi-check2"></i> Current</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-secondary fs-8">
+                                    {% if is_super_admin %}
+                                    You hold global Platform Super Admin authorization across all institutions.
+                                    {% else %}
+                                    No organization memberships assigned.
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {% if employee_profile %}
+        <div class="saas-card">
+            <div class="saas-card-header">
+                <h5 class="mb-0 fs-7 fw-bold"><i class="bi bi-person-badge me-2 text-primary"></i>Linked Staff Directory Record</h5>
+            </div>
+            <div class="saas-card-body p-3">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+                    <div>
+                        <div class="fw-bold fs-7 text-dark">{{ employee_profile.full_name }}</div>
+                        <div class="text-secondary fs-9"><code>{{ employee_profile.employee_id }}</code> &bull; {{ employee_profile.designation }}</div>
+                        <div class="text-secondary fs-9">{{ employee_profile.department.name }} &bull; {{ employee_profile.organization.name }}</div>
+                    </div>
+                    <a href="{% url 'employees:detail' employee_profile.pk %}" class="btn btn-outline-secondary btn-sm">
+                        View Staff Profile &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

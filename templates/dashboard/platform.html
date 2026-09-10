@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+
+{% block title %}Platform Admin Telemetry — Workforce OS{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="saas-breadcrumb d-none d-md-flex">
+            <span>Global Management</span>
+            <i class="bi bi-chevron-right fs-9"></i>
+            <span class="text-dark fw-semibold">Platform Telemetry</span>
+        </div>
+        <h1 class="h2 mb-1">Platform Super Admin</h1>
+        <p class="text-secondary fs-8 mb-0">Multi-tenant ecosystem, institutional health, and infrastructure metrics.</p>
+    </div>
+    <div>
+        <a href="{% url 'organizations:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Register New Organization
+        </a>
+    </div>
+</div>
+
+<!-- Platform KPI Cards -->
+<div class="row g-2 g-md-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="metric-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="fs-8 fw-semibold text-secondary">Total Tenants</span>
+                <div class="metric-icon-box bg-primary-subtle text-primary">
+                    <i class="bi bi-buildings"></i>
+                </div>
+            </div>
+            <div class="metric-number">{{ total_organizations }}</div>
+            <div class="fs-9 text-secondary"><span class="fw-semibold text-success">{{ active_organizations }}</span> active institutions</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="metric-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="fs-8 fw-semibold text-secondary">System-Wide Staff</span>
+                <div class="metric-icon-box bg-info-subtle text-info">
+                    <i class="bi bi-people"></i>
+                </div>
+            </div>
+            <div class="metric-number text-info">{{ total_employees }}</div>
+            <div class="fs-9 text-secondary">Aggregated across all orgs</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="metric-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="fs-8 fw-semibold text-secondary">User Accounts</span>
+                <div class="metric-icon-box bg-warning-subtle text-warning">
+                    <i class="bi bi-person-gear"></i>
+                </div>
+            </div>
+            <div class="metric-number text-warning">{{ total_users }}</div>
+            <div class="fs-9 text-secondary">Authenticated logins</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="metric-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="fs-8 fw-semibold text-secondary">Operational Health</span>
+                <div class="metric-icon-box bg-success-subtle text-success">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+            </div>
+            <div class="metric-number text-success">100%</div>
+            <div class="fs-9 text-success"><i class="bi bi-dot"></i> All services nominal</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts & Tenants Table -->
+<div class="row g-3 g-md-4 mb-4">
+    <!-- Type Distribution Chart -->
+    <div class="col-lg-5">
+        <div class="saas-card h-100">
+            <div class="saas-card-header">
+                <div>
+                    <h5 class="mb-0 fs-7 fw-bold">Institutions by Classification</h5>
+                    <div class="fs-9 text-secondary">Colleges, Companies, Hospitals & NGOs</div>
+                </div>
+            </div>
+            <div class="saas-card-body p-3">
+                <div style="height: 260px; position: relative;">
+                    <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Tenants Table -->
+    <div class="col-lg-7">
+        <div class="saas-card h-100">
+            <div class="saas-card-header">
+                <div>
+                    <h5 class="mb-0 fs-7 fw-bold">Recent Tenant Onboardings</h5>
+                    <div class="fs-9 text-secondary">Registered organizations on the platform</div>
+                </div>
+                <a href="{% url 'organizations:list' %}" class="fs-8 fw-semibold text-primary text-decoration-none">
+                    View All &rarr;
+                </a>
+            </div>
+            <div class="saas-card-body p-0">
+                <div class="table-responsive">
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Organization</th>
+                                <th>Type</th>
+                                <th>Staff</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for org in recent_orgs %}
+                            <tr>
+                                <td class="fw-semibold fs-8">{{ org.name }}</td>
+                                <td><span class="status-badge pill-neutral fs-9">{{ org.get_organization_type_display }}</span></td>
+                                <td><span class="fw-bold fs-8">{{ org.emp_count }}</span></td>
+                                <td>
+                                    {% if org.is_active %}
+                                    <span class="status-badge status-badge-active fs-9"><span class="status-dot"></span> Active</span>
+                                    {% else %}
+                                    <span class="status-badge status-badge-archived fs-9"><span class="status-dot"></span> Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'accounts:switch_org' org.pk %}" class="btn btn-outline-secondary btn-icon" data-bs-toggle="tooltip" title="Switch Tenant Context">
+                                            <i class="bi bi-box-arrow-in-right"></i>
+                                        </a>
+                                        <a href="{% url 'organizations:detail' org.pk %}" class="btn btn-outline-secondary btn-icon" data-bs-toggle="tooltip" title="Organization Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-secondary fs-8">No organizations registered yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Global Security Audit Trail -->
+<div class="saas-card">
+    <div class="saas-card-header">
+        <div>
+            <h5 class="mb-0 fs-7 fw-bold">Platform-Wide Security & Event Audit</h5>
+            <div class="fs-9 text-secondary">Cross-tenant activity log</div>
+        </div>
+        <a href="{% url 'audit:list' %}" class="fs-8 fw-semibold text-primary text-decoration-none">
+            All Logs &rarr;
+        </a>
+    </div>
+    <div class="saas-card-body p-0">
+        <div class="table-responsive">
+            <table class="saas-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Tenant</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Entity</th>
+                        <th>Details</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_platform_audits %}
+                    <tr>
+                        <td class="fs-9 text-secondary font-monospace">{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+                        <td class="fw-semibold fs-8">{{ log.organization.name|default:"Global Platform" }}</td>
+                        <td><code>{{ log.user.username|default:"System" }}</code></td>
+                        <td>
+                            <span class="status-badge {% if log.action == 'CREATE' %}status-badge-active{% elif log.action == 'UPDATE' %}pill-primary{% elif log.action == 'ARCHIVE' or log.action == 'DELETE' %}status-badge-terminated{% else %}pill-neutral{% endif %} fs-9">
+                                {{ log.get_action_display }}
+                            </span>
+                        </td>
+                        <td class="fs-8">{{ log.entity_type }}</td>
+                        <td class="fs-8 text-truncate" style="max-width: 260px;">{{ log.description }}</td>
+                        <td class="fs-9 text-secondary font-monospace">{{ log.ip_address|default:"127.0.0.1" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-secondary fs-8">No audit trail records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const typeLabels = JSON.parse('{{ type_labels_json|escapejs }}');
+    const typeData = JSON.parse('{{ type_data_json|escapejs }}');
+
+    const ctxType = document.getElementById('typeChart');
+    if (ctxType) {
+        new Chart(ctxType.getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    data: typeData,
+                    backgroundColor: ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#8b5cf6', '#64748b', '#06b6d4'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 10, font: { size: 11 }, padding: 10 }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

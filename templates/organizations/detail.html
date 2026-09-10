@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ organization.name }} — Overview — Workforce OS{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="saas-breadcrumb d-none d-md-flex">
+            <a href="{% url 'organizations:list' %}">Organizations</a>
+            <i class="bi bi-chevron-right fs-9"></i>
+            <span class="text-dark fw-semibold">{{ organization.name }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <h1 class="h2 mb-0">{{ organization.name }}</h1>
+            <span class="status-badge pill-neutral fs-9">{{ organization.get_organization_type_display }}</span>
+            {% if organization.is_active %}
+            <span class="status-badge status-badge-active fs-9"><span class="status-dot"></span> Active</span>
+            {% else %}
+            <span class="status-badge status-badge-archived fs-9"><span class="status-dot"></span> Inactive</span>
+            {% endif %}
+        </div>
+        <p class="text-secondary fs-8 mb-0 mt-1">Tenant Profile &bull; Onboarded {{ organization.created_at|date:"F d, Y" }}</p>
+    </div>
+
+    <div class="d-flex gap-2 w-100 w-md-auto">
+        <a href="{% url 'accounts:switch_org' organization.pk %}" class="btn btn-primary flex-grow-1 flex-md-grow-0">
+            <i class="bi bi-box-arrow-in-right"></i> Switch Context
+        </a>
+        <a href="{% url 'organizations:edit' organization.pk %}" class="btn btn-outline-secondary flex-grow-1 flex-md-grow-0">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 g-md-4">
+    <!-- Left Column: Details & Authorized Members -->
+    <div class="col-lg-4">
+        <div class="saas-card mb-4">
+            <div class="saas-card-header">
+                <h5 class="mb-0 fs-7 fw-bold"><i class="bi bi-info-circle me-2 text-primary"></i>Organization Contact</h5>
+            </div>
+            <div class="saas-card-body p-3">
+                <div class="mb-3">
+                    <span class="text-secondary fs-9 fw-bold text-uppercase d-block mb-1">Official Email</span>
+                    <a href="mailto:{{ organization.email }}" class="fs-8 text-primary text-decoration-none fw-semibold">{{ organization.email }}</a>
+                </div>
+                <div class="mb-3">
+                    <span class="text-secondary fs-9 fw-bold text-uppercase d-block mb-1">Contact Phone</span>
+                    <div class="fs-8 text-dark font-monospace">{{ organization.phone }}</div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-secondary fs-9 fw-bold text-uppercase d-block mb-1">Website</span>
+                    {% if organization.website %}
+                    <a href="{{ organization.website }}" target="_blank" class="fs-8 text-primary text-decoration-none">
+                        {{ organization.website }} <i class="bi bi-box-arrow-up-right fs-9"></i>
+                    </a>
+                    {% else %}
+                    <span class="text-secondary fs-8">Not provided</span>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <span class="text-secondary fs-9 fw-bold text-uppercase d-block mb-1">Address</span>
+                    <div class="fs-8 text-dark">{{ organization.address }}</div>
+                </div>
+                {% if organization.description %}
+                <div>
+                    <span class="text-secondary fs-9 fw-bold text-uppercase d-block mb-1">Description</span>
+                    <p class="fs-8 text-secondary mb-0">{{ organization.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Authorized Roles -->
+        <div class="saas-card">
+            <div class="saas-card-header">
+                <h5 class="mb-0 fs-7 fw-bold"><i class="bi bi-person-gear me-2 text-primary"></i>Authorized Roles</h5>
+                <span class="status-badge pill-neutral fs-9">{{ memberships.count }}</span>
+            </div>
+            <div class="saas-card-body p-0">
+                <div class="d-flex flex-column">
+                    {% for m in memberships %}
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-semibold fs-8 text-dark">{{ m.user.get_full_name|default:m.user.username }}</div>
+                            <div class="text-secondary fs-9">{{ m.user.email }}</div>
+                        </div>
+                        <span class="status-badge pill-primary fs-9">{{ m.get_role_display }}</span>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4 text-secondary fs-8">No specific members assigned.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Departments & Staff Preview -->
+    <div class="col-lg-8">
+        <!-- Operating Divisions -->
+        <div class="saas-card mb-4">
+            <div class="saas-card-header">
+                <div>
+                    <h5 class="mb-0 fs-7 fw-bold"><i class="bi bi-diagram-3 me-2 text-primary"></i>Operating Divisions & Departments</h5>
+                    <div class="fs-9 text-secondary">Functional departments inside {{ organization.name }}</div>
+                </div>
+                <span class="status-badge pill-neutral fs-9">{{ departments.count }} Divisions</span>
+            </div>
+            <div class="saas-card-body p-0">
+                <div class="table-responsive">
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Department Name</th>
+                                <th>Code</th>
+                                <th>Manager / Head</th>
+                                <th>Active Staff</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dept in departments %}
+                            <tr>
+                                <td class="fw-semibold fs-8">{{ dept.name }}</td>
+                                <td><code>{{ dept.code }}</code></td>
+                                <td class="fs-8 text-secondary">{{ dept.manager.full_name|default:"Unassigned" }}</td>
+                                <td><span class="status-badge pill-neutral fs-9">{{ dept.active_employees }} Staff</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-secondary fs-8">No departments configured yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Staff Added -->
+        <div class="saas-card">
+            <div class="saas-card-header">
+                <div>
+                    <h5 class="mb-0 fs-7 fw-bold"><i class="bi bi-people me-2 text-primary"></i>Recent Personnel</h5>
+                    <div class="fs-9 text-secondary">Recently onboarded employees</div>
+                </div>
+            </div>
+            <div class="saas-card-body p-0">
+                <div class="table-responsive">
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Personnel</th>
+                                <th>ID</th>
+                                <th>Department</th>
+                                <th>Designation</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emp in recent_employees %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'employees:detail' emp.pk %}" class="fw-semibold text-dark text-decoration-none fs-8">
+                                        {{ emp.full_name }}
+                                    </a>
+                                </td>
+                                <td><code>{{ emp.employee_id }}</code></td>
+                                <td class="fs-8">{{ emp.department.name }}</td>
+                                <td class="fs-8">{{ emp.designation }}</td>
+                                <td><span class="status-badge status-badge-active fs-9"><span class="status-dot"></span> Active</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-secondary fs-8">No employees registered yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

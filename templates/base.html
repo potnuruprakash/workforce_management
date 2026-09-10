@@ -1,0 +1,374 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="theme-color" content="#0f172a">
+    <title>{% block title %}Workforce OS — Enterprise Workforce Management{% endblock %}</title>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Enterprise SaaS Design System -->
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    <!-- Chart.js 4.4 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div id="app-container">
+    <!-- ====================================================================
+         1. DESKTOP PERMANENT SIDEBAR (Visible on >= 992px)
+         ==================================================================== -->
+    <aside class="desktop-sidebar">
+        <!-- Brand Header -->
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <i class="bi bi-layers-fill"></i>
+            </div>
+            <div>
+                <div class="brand-title">Workforce OS</div>
+                <div class="brand-subtitle">Enterprise Suite</div>
+            </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <div class="py-2">
+            <div class="nav-group-label">Core Workspaces</div>
+            <a href="{% url 'dashboard:index' %}" class="sidebar-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-grid-1x2-fill"></i> Dashboard
+            </a>
+
+            {% if is_super_admin %}
+            <a href="{% url 'organizations:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'organizations' %}active{% endif %}">
+                <i class="bi bi-buildings-fill"></i> Organizations
+            </a>
+            {% endif %}
+
+            <a href="{% url 'departments:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'departments' %}active{% endif %}">
+                <i class="bi bi-diagram-3-fill"></i> Departments
+            </a>
+
+            <a href="{% url 'employees:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'employees' %}active{% endif %}">
+                <i class="bi bi-people-fill"></i> Staff Directory
+            </a>
+
+            <div class="nav-group-label">Governance & Vault</div>
+            {% if is_org_admin %}
+            <a href="{% url 'audit:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'audit' %}active{% endif %}">
+                <i class="bi bi-journal-check"></i> Audit Trail
+            </a>
+            {% endif %}
+
+            <a href="{% url 'notifications:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'notifications' %}active{% endif %}">
+                <i class="bi bi-bell-fill"></i> Notifications
+                {% if unread_notifications_count > 0 %}
+                <span class="badge rounded-pill bg-danger ms-auto fs-9">{{ unread_notifications_count }}</span>
+                {% endif %}
+            </a>
+
+            {% if user.is_staff or is_super_admin %}
+            <div class="nav-group-label">System</div>
+            <a href="/admin/" target="_blank" class="sidebar-link">
+                <i class="bi bi-sliders"></i> Django Admin
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar Footer Info -->
+        <div class="sidebar-footer">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avatar avatar-sm avatar-initials-primary">
+                    {{ active_organization.name|default:"P"|make_list|first|upper }}
+                </div>
+                <div class="overflow-hidden">
+                    <div class="text-dark fw-semibold fs-8 text-truncate">{{ active_organization.name|default:"Platform View" }}</div>
+                    <div class="text-secondary fs-9 text-truncate">{{ active_role|default:"Platform Admin" }}</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ====================================================================
+         2. MOBILE OFFCANVAS DRAWER (Slide-in Drawer for < 992px)
+         ==================================================================== -->
+    <div class="offcanvas offcanvas-start mobile-drawer" tabindex="-1" id="mobileDrawer" aria-labelledby="mobileDrawerLabel">
+        <div class="sidebar-brand d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <div class="brand-icon">
+                    <i class="bi bi-layers-fill"></i>
+                </div>
+                <div>
+                    <div class="brand-title">Workforce OS</div>
+                    <div class="brand-subtitle">Enterprise Suite</div>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+
+        <div class="offcanvas-body p-0">
+            <div class="py-2">
+                <div class="nav-group-label">Core Workspaces</div>
+                <a href="{% url 'dashboard:index' %}" class="sidebar-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                </a>
+
+                {% if is_super_admin %}
+                <a href="{% url 'organizations:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'organizations' %}active{% endif %}">
+                    <i class="bi bi-buildings-fill"></i> Organizations
+                </a>
+                {% endif %}
+
+                <a href="{% url 'departments:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'departments' %}active{% endif %}">
+                    <i class="bi bi-diagram-3-fill"></i> Departments
+                </a>
+
+                <a href="{% url 'employees:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'employees' %}active{% endif %}">
+                    <i class="bi bi-people-fill"></i> Staff Directory
+                </a>
+
+                <div class="nav-group-label">Governance & Vault</div>
+                {% if is_org_admin %}
+                <a href="{% url 'audit:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'audit' %}active{% endif %}">
+                    <i class="bi bi-journal-check"></i> Audit Trail
+                </a>
+                {% endif %}
+
+                <a href="{% url 'notifications:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'notifications' %}active{% endif %}">
+                    <i class="bi bi-bell-fill"></i> Notifications
+                    {% if unread_notifications_count > 0 %}
+                    <span class="badge rounded-pill bg-danger ms-auto fs-9">{{ unread_notifications_count }}</span>
+                    {% endif %}
+                </a>
+
+                <div class="nav-group-label">Account</div>
+                <a href="{% url 'accounts:profile' %}" class="sidebar-link">
+                    <i class="bi bi-person-circle"></i> My Account
+                </a>
+                <a href="{% url 'accounts:password_change' %}" class="sidebar-link">
+                    <i class="bi bi-shield-lock"></i> Security
+                </a>
+                <a href="{% url 'accounts:logout' %}" class="sidebar-link text-danger">
+                    <i class="bi bi-box-arrow-right text-danger"></i> Sign Out
+                </a>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="text-dark fw-semibold fs-8 text-truncate">{{ active_organization.name|default:"Platform View" }}</div>
+            <div class="text-secondary fs-9">{{ active_role|default:"Administrator" }}</div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         3. MAIN SHELL (Sticky Header + Content + Footer)
+         ==================================================================== -->
+    <div class="main-shell">
+        <!-- Top Sticky Header -->
+        <header class="top-header">
+            <div class="d-flex align-items-center gap-2 gap-md-3">
+                <!-- Mobile Drawer Trigger (Hidden on Desktop) -->
+                <button class="btn btn-outline-secondary btn-icon d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileDrawer" aria-label="Open Navigation">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <!-- Active Organization Switcher Dropdown -->
+                <div class="dropdown">
+                    <button class="org-chip-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-building text-primary"></i>
+                        <span class="text-truncate">
+                            {% if active_organization %}
+                                {{ active_organization.name }}
+                            {% else %}
+                                Global Platform
+                            {% endif %}
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu shadow-md" style="min-width: 260px;">
+                        {% if is_super_admin %}
+                            <li><h6 class="dropdown-header text-uppercase fs-9 fw-bold text-secondary">Switch Tenant Context</h6></li>
+                            <li>
+                                <a class="dropdown-item py-2 {% if not active_organization %}active{% endif %}" href="{% url 'dashboard:platform' %}">
+                                    <i class="bi bi-globe me-2 text-primary"></i> Global Platform Overview
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% for org in all_organizations %}
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center justify-content-between {% if active_organization.id == org.id %}active{% endif %}" href="{% url 'accounts:switch_org' org.id %}">
+                                    <span class="text-truncate"><i class="bi bi-building me-2"></i> {{ org.name }}</span>
+                                    {% if active_organization.id == org.id %}
+                                    <i class="bi bi-check2 text-primary ms-2"></i>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        {% else %}
+                            <li><h6 class="dropdown-header text-uppercase fs-9 fw-bold text-secondary">Your Organizations</h6></li>
+                            {% for m in user_memberships %}
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center justify-content-between {% if active_organization.id == m.organization.id %}active{% endif %}" href="{% url 'accounts:switch_org' m.organization.id %}">
+                                    <span class="text-truncate">{{ m.organization.name }}</span>
+                                    <span class="badge bg-secondary-subtle text-secondary fs-9">{{ m.get_role_display }}</span>
+                                </a>
+                            </li>
+                            {% empty %}
+                            <li><span class="dropdown-item text-muted fs-8">No organizations assigned</span></li>
+                            {% endfor %}
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Top Right Action Cluster -->
+            <div class="d-flex align-items-center gap-2">
+                <!-- Notifications Dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-icon position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
+                        <i class="bi bi-bell fs-6"></i>
+                        {% if unread_notifications_count > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                            <span class="visually-hidden">Unread notifications</span>
+                        </span>
+                        {% endif %}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg py-0" style="width: 330px; max-width: 90vw;">
+                        <li class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light">
+                            <span class="fw-bold fs-8 text-uppercase tracking-wider">Notifications</span>
+                            {% if unread_notifications_count > 0 %}
+                            <a href="{% url 'notifications:mark_all_read' %}" class="fs-9 text-primary text-decoration-none fw-semibold">Mark all read</a>
+                            {% endif %}
+                        </li>
+                        <div style="max-height: 320px; overflow-y: auto;">
+                            {% for n in recent_notifications %}
+                            <li>
+                                <a class="dropdown-item py-2 px-3 border-bottom text-wrap" href="{% url 'notifications:mark_read' n.pk %}">
+                                    <div class="fw-semibold fs-8 text-dark">{{ n.title }}</div>
+                                    <div class="text-muted fs-9 text-truncate">{{ n.message }}</div>
+                                    <div class="text-secondary fs-9 mt-1">{{ n.created_at|timesince }} ago</div>
+                                </a>
+                            </li>
+                            {% empty %}
+                            <li><div class="py-4 text-center text-muted fs-8">No unread notifications</div></li>
+                            {% endfor %}
+                        </div>
+                        <li class="p-2 text-center bg-light">
+                            <a class="fs-8 fw-semibold text-primary text-decoration-none" href="{% url 'notifications:list' %}">View all notifications &rarr;</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- User Profile Dropdown -->
+                <div class="dropdown">
+                    <button class="btn p-0 border-0 d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="avatar avatar-sm avatar-initials">
+                            {{ request.user.first_name|default:request.user.username|make_list|first|upper }}
+                        </div>
+                        <div class="d-none d-md-block text-start">
+                            <div class="fw-semibold fs-8 text-dark line-clamp-1" style="max-width: 120px;">
+                                {{ request.user.first_name|default:request.user.username }}
+                            </div>
+                            <div class="text-secondary fs-9" style="line-height: 1;">{{ active_role|default:"Admin" }}</div>
+                        </div>
+                        <i class="bi bi-chevron-down text-secondary fs-9 d-none d-md-inline"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="fw-bold fs-8">{{ request.user.get_full_name|default:request.user.username }}</div>
+                            <div class="text-secondary fs-9 text-truncate" style="max-width: 200px;">{{ request.user.email }}</div>
+                            <span class="status-badge status-badge-active mt-2 fs-9">
+                                <span class="status-dot"></span> {{ active_role|default:"Platform Admin" }}
+                            </span>
+                        </li>
+                        <li><a class="dropdown-item py-2 fs-8" href="{% url 'accounts:profile' %}"><i class="bi bi-person me-2 text-secondary"></i> My Account</a></li>
+                        <li><a class="dropdown-item py-2 fs-8" href="{% url 'accounts:password_change' %}"><i class="bi bi-shield-lock me-2 text-secondary"></i> Security & Password</a></li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li><a class="dropdown-item py-2 fs-8 text-danger" href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right me-2 text-danger"></i> Sign Out</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dynamic Workspace -->
+        <main class="page-workspace">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-top py-3 px-3 px-md-4 text-muted fs-8 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                &copy; 2026 <strong>Workforce OS</strong> &bull; Enterprise Workforce & Staff Management.
+            </div>
+            <div class="text-secondary fs-9">
+                Multi-Tenant Architecture &bull; Mobile-First Design
+            </div>
+        </footer>
+    </div>
+</div>
+
+<!-- ====================================================================
+     4. FLOATING TOAST NOTIFICATIONS (Replaces static inline banners)
+     ==================================================================== -->
+{% if messages %}
+<div class="toast-container-custom">
+    {% for message in messages %}
+    <div class="saas-toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="fs-5 mt-1">
+            {% if message.tags == 'success' %}
+            <i class="bi bi-check-circle-fill text-success"></i>
+            {% elif message.tags == 'danger' or message.tags == 'error' %}
+            <i class="bi bi-exclamation-circle-fill text-danger"></i>
+            {% elif message.tags == 'warning' %}
+            <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+            {% else %}
+            <i class="bi bi-info-circle-fill text-primary"></i>
+            {% endif %}
+        </div>
+        <div class="flex-grow-1">
+            <div class="fw-semibold fs-8 text-dark">
+                {% if message.tags == 'success' %}Success{% elif message.tags == 'warning' %}Warning{% elif message.tags == 'danger' %}Action Failed{% else %}Notice{% endif %}
+            </div>
+            <div class="text-secondary fs-8">{{ message }}</div>
+        </div>
+        <button type="button" class="btn-close fs-9" onclick="this.closest('.saas-toast').remove()" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- ====================================================================
+     5. UNIVERSAL CONFIRMATION MODAL
+     ==================================================================== -->
+<div class="modal fade" id="actionConfirmModal" tabindex="-1" aria-labelledby="actionModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="actionConfirmForm" method="POST" action="">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title fs-6 fw-bold" id="actionModalTitle">Confirm Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body fs-8 text-secondary" id="actionModalMessage">
+                    Are you sure you want to perform this action?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="actionModalSubmitBtn">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 Bundle JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Main Application Script -->
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

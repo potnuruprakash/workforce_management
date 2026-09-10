@@ -1,0 +1,425 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ employee.full_name }} ({{ employee.employee_id }}) — Profile — Workforce OS{% endblock %}
+
+{% block content %}
+<!-- Back to Directory -->
+<div class="mb-3">
+    <a href="{% url 'employees:list' %}" class="fs-8 text-secondary text-decoration-none d-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Staff Directory
+    </a>
+</div>
+
+<!-- ====================================================================
+     1. EMPLOYEE PROFILE HERO CARD
+     ==================================================================== -->
+<div class="saas-card mb-4">
+    <div class="saas-card-body p-3 p-md-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+            <!-- Left: Avatar & Identity -->
+            <div class="d-flex align-items-center gap-3">
+                {% if employee.profile_photo %}
+                <img src="{{ employee.profile_photo.url }}" alt="{{ employee.full_name }}" class="avatar avatar-lg border shadow-xs">
+                {% else %}
+                <div class="avatar avatar-lg avatar-initials border shadow-xs">
+                    {{ employee.full_name|make_list|first|upper }}
+                </div>
+                {% endif %}
+
+                <div>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <h2 class="h3 mb-0">{{ employee.full_name }}</h2>
+                        {% if employee.is_archived %}
+                        <span class="status-badge status-badge-archived fs-9"><span class="status-dot"></span> Archived</span>
+                        {% elif employee.employment_status == 'ACTIVE' %}
+                        <span class="status-badge status-badge-active fs-9"><span class="status-dot"></span> Active</span>
+                        {% elif employee.employment_status == 'ON_LEAVE' %}
+                        <span class="status-badge status-badge-leave fs-9"><span class="status-dot"></span> On Leave</span>
+                        {% elif employee.employment_status == 'RESIGNED' %}
+                        <span class="status-badge status-badge-resigned fs-9"><span class="status-dot"></span> Resigned</span>
+                        {% elif employee.employment_status == 'RETIRED' %}
+                        <span class="status-badge status-badge-retired fs-9"><span class="status-dot"></span> Retired</span>
+                        {% else %}
+                        <span class="status-badge status-badge-terminated fs-9"><span class="status-dot"></span> {{ employee.get_employment_status_display }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="text-secondary fs-8 mt-1">
+                        <code>{{ employee.employee_id }}</code> &bull;
+                        <span class="text-dark fw-semibold">{{ employee.designation }}</span> &bull;
+                        {{ employee.department.name }}
+                    </div>
+
+                    <div class="d-flex flex-wrap align-items-center gap-3 text-secondary fs-9 mt-2">
+                        <span><i class="bi bi-envelope text-muted me-1"></i> {{ employee.email }}</span>
+                        <span><i class="bi bi-telephone text-muted me-1"></i> {{ employee.phone_number }}</span>
+                        <span><i class="bi bi-calendar3 text-muted me-1"></i> Joined {{ employee.joining_date|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Action Buttons -->
+            <div class="d-flex flex-wrap gap-2 w-100 w-md-auto mt-2 mt-md-0">
+                {% if is_org_admin %}
+                <a href="{% url 'employees:edit' employee.pk %}" class="btn btn-outline-secondary flex-grow-1 flex-md-grow-0">
+                    <i class="bi bi-pencil"></i> Edit Profile
+                </a>
+                <button type="button" class="btn btn-primary flex-grow-1 flex-md-grow-0" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+                    <i class="bi bi-cloud-arrow-up"></i> Upload Doc
+                </button>
+
+                {% if not employee.is_archived %}
+                <a href="{% url 'employees:archive' employee.pk %}" class="btn btn-outline-secondary text-warning" data-bs-toggle="tooltip" title="Archive Personnel">
+                    <i class="bi bi-archive"></i>
+                </a>
+                {% else %}
+                <button type="button" class="btn btn-outline-secondary text-success"
+                    data-bs-toggle="modal"
+                    data-bs-target="#actionConfirmModal"
+                    data-action-url="{% url 'employees:restore' employee.pk %}"
+                    data-action-title="Restore Personnel"
+                    data-action-message="Restore <strong>{{ employee.full_name }}</strong> back to active status?"
+                    data-action-btn-text="Restore"
+                    data-action-btn-class="btn-success"
+                    data-bs-tooltip="tooltip"
+                    title="Restore to Active">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+                {% endif %}
+
+                {% if is_super_admin or active_role == 'OWNER' %}
+                <button type="button" class="btn btn-outline-secondary text-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#actionConfirmModal"
+                    data-action-url="{% url 'employees:delete' employee.pk %}"
+                    data-action-title="Permanent Deletion"
+                    data-action-message="<div class='text-danger fw-bold mb-2'>Warning: This action is permanent!</div>Permanently remove <strong>{{ employee.full_name }} ({{ employee.employee_id }})</strong> and all attachments from database?"
+                    data-action-btn-text="Delete Permanently"
+                    data-action-btn-class="btn-danger"
+                    data-bs-tooltip="tooltip"
+                    title="Permanent Delete">
+                    <i class="bi bi-trash"></i>
+                </button>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================================================================
+     2. MOBILE-FRIENDLY HORIZONTALLY SCROLLABLE TABS
+     ==================================================================== -->
+<div class="saas-tabs-wrapper">
+    <div class="saas-tabs" id="profileTabList" role="tablist">
+        <button class="saas-tab-btn active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details-content" type="button" role="tab">
+            <i class="bi bi-person-lines-fill me-1"></i> Personal & Employment Details
+        </button>
+        <button class="saas-tab-btn" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs-content" type="button" role="tab">
+            <i class="bi bi-folder2-open me-1"></i> Document Vault
+            <span class="badge bg-secondary-subtle text-secondary ms-1 fs-9">{{ documents.count }}</span>
+        </button>
+        <button class="saas-tab-btn" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit-content" type="button" role="tab">
+            <i class="bi bi-clock-history me-1"></i> Lifecycle Audit History
+        </button>
+    </div>
+</div>
+
+<div class="tab-content" id="profileTabContent">
+    <!-- TAB 1: DETAILS -->
+    <div class="tab-pane fade show active" id="details-content" role="tabpanel">
+        <div class="row g-3 g-md-4">
+            <!-- Personal Info -->
+            <div class="col-md-6">
+                <div class="saas-card h-100 mb-0">
+                    <div class="saas-card-header">
+                        <h5 class="mb-0 fs-7 fw-bold"><i class="bi bi-person me-2 text-primary"></i>Personal Information</h5>
+                    </div>
+                    <div class="saas-card-body p-3">
+                        <div class="row g-3 fs-8">
+                            <div class="col-sm-4 text-secondary">Full Name</div>
+                            <div class="col-sm-8 fw-semibold text-dark">{{ employee.full_name }}</div>
+
+                            <div class="col-sm-4 text-secondary">Date of Birth</div>
+                            <div class="col-sm-8 text-dark">{{ employee.date_of_birth|date:"F d, Y" }}</div>
+
+                            <div class="col-sm-4 text-secondary">Gender</div>
+                            <div class="col-sm-8 text-dark">{{ employee.get_gender_display }}</div>
+
+                            <div class="col-sm-4 text-secondary">Email Address</div>
+                            <div class="col-sm-8"><a href="mailto:{{ employee.email }}" class="text-primary text-decoration-none">{{ employee.email }}</a></div>
+
+                            <div class="col-sm-4 text-secondary">Phone Number</div>
+                            <div class="col-sm-8 text-dark font-monospace">{{ employee.phone_number }}</div>
+
+                            <div class="col-sm-4 text-secondary">Residential Address</div>
+                            <div class="col-sm-8 text-dark">{{ employee.address }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employment Details -->
+            <div class="col-md-6">
+                <div class="saas-card h-100 mb-0">
+                    <div class="saas-card-header">
+                        <h5 class="mb-0 fs-7 fw-bold"><i class="bi bi-briefcase me-2 text-primary"></i>Employment & Role</h5>
+                    </div>
+                    <div class="saas-card-body p-3">
+                        <div class="row g-3 fs-8">
+                            <div class="col-sm-4 text-secondary">Staff ID</div>
+                            <div class="col-sm-8"><code>{{ employee.employee_id }}</code></div>
+
+                            <div class="col-sm-4 text-secondary">Organization</div>
+                            <div class="col-sm-8 fw-semibold text-dark">{{ employee.organization.name }}</div>
+
+                            <div class="col-sm-4 text-secondary">Department</div>
+                            <div class="col-sm-8 text-dark">{{ employee.department.name }} ({{ employee.department.code }})</div>
+
+                            <div class="col-sm-4 text-secondary">Designation</div>
+                            <div class="col-sm-8 text-dark fw-medium">{{ employee.designation }}</div>
+
+                            <div class="col-sm-4 text-secondary">Date of Joining</div>
+                            <div class="col-sm-8 text-dark">{{ employee.joining_date|date:"F d, Y" }}</div>
+
+                            <div class="col-sm-4 text-secondary">Status</div>
+                            <div class="col-sm-8">
+                                <span class="status-badge {% if employee.employment_status == 'ACTIVE' %}status-badge-active{% else %}status-badge-leave{% endif %} fs-9">
+                                    <span class="status-dot"></span> {{ employee.get_employment_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic & Bio -->
+            <div class="col-12">
+                <div class="saas-card mb-0">
+                    <div class="saas-card-header">
+                        <h5 class="mb-0 fs-7 fw-bold"><i class="bi bi-mortarboard me-2 text-primary"></i>Qualifications & Biography</h5>
+                    </div>
+                    <div class="saas-card-body p-3">
+                        <div class="mb-3">
+                            <span class="fs-9 fw-bold text-secondary text-uppercase tracking-wider d-block mb-1">Educational Credentials</span>
+                            <div class="fw-semibold text-dark fs-8">{{ employee.qualification|default:"Not specified" }}</div>
+                        </div>
+                        <div>
+                            <span class="fs-9 fw-bold text-secondary text-uppercase tracking-wider d-block mb-1">Professional Summary</span>
+                            <p class="text-secondary fs-8 mb-0">
+                                {{ employee.bio|default:"No biographical details entered."|linebreaks }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: DOCUMENT VAULT -->
+    <div class="tab-pane fade" id="docs-content" role="tabpanel">
+        <div class="saas-card">
+            <div class="saas-card-header">
+                <div>
+                    <h5 class="mb-0 fs-7 fw-bold">Verified Staff Documents</h5>
+                    <div class="fs-9 text-secondary">Compliance certificates, resumes, and identification</div>
+                </div>
+                {% if is_org_admin %}
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+                    <i class="bi bi-cloud-arrow-up"></i> Upload Document
+                </button>
+                {% endif %}
+            </div>
+
+            <div class="saas-card-body p-0">
+                <div class="table-responsive">
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Document</th>
+                                <th>Category</th>
+                                <th>Size</th>
+                                <th>Uploaded By</th>
+                                <th>Verification</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documents %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-file-earmark-pdf fs-5 text-danger"></i>
+                                        <div>
+                                            <div class="fw-semibold fs-8 text-dark">{{ doc.document_name }}</div>
+                                            {% if doc.notes %}<div class="text-secondary fs-9">{{ doc.notes }}</div>{% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="status-badge pill-neutral fs-9">{{ doc.get_document_type_display }}</span></td>
+                                <td class="fs-9 text-secondary">{{ doc.file_size|filesizeformat }}</td>
+                                <td class="fs-8 text-secondary">{{ doc.uploaded_by.username|default:"System" }}</td>
+                                <td>
+                                    {% if doc.verification_status == 'VERIFIED' %}
+                                    <span class="status-badge status-badge-active fs-9"><span class="status-dot"></span> Verified</span>
+                                    {% elif doc.verification_status == 'REJECTED' %}
+                                    <span class="status-badge status-badge-terminated fs-9"><span class="status-dot"></span> Rejected</span>
+                                    {% else %}
+                                    <span class="status-badge status-badge-leave fs-9"><span class="status-dot"></span> Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'documents:download' doc.pk %}" target="_blank" class="btn btn-outline-secondary btn-icon" data-bs-toggle="tooltip" title="Download Document">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+
+                                        {% if is_org_admin %}
+                                        <button type="button" class="btn btn-outline-secondary btn-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-shield-check"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm fs-8">
+                                            <li><h6 class="dropdown-header text-uppercase fs-9">Update Verification</h6></li>
+                                            <li>
+                                                <form method="POST" action="{% url 'documents:verify' doc.pk %}">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="status" value="VERIFIED">
+                                                    <button type="submit" class="dropdown-item text-success"><i class="bi bi-check2 me-2"></i> Mark Verified</button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form method="POST" action="{% url 'documents:verify' doc.pk %}">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="status" value="REJECTED">
+                                                    <button type="submit" class="dropdown-item text-danger"><i class="bi bi-x me-2"></i> Mark Rejected</button>
+                                                </form>
+                                            </li>
+                                        </ul>
+
+                                        <button type="button" class="btn btn-outline-secondary btn-icon text-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#actionConfirmModal"
+                                            data-action-url="{% url 'documents:delete' doc.pk %}"
+                                            data-action-title="Delete Document"
+                                            data-action-message="Remove document <strong>{{ doc.document_name }}</strong> from this employee record?"
+                                            data-action-btn-text="Delete File"
+                                            data-action-btn-class="btn-danger"
+                                            data-bs-tooltip="tooltip"
+                                            title="Delete File">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state py-4">
+                                        <div class="empty-state-icon" style="width: 48px; height: 48px; font-size: 1.5rem;">
+                                            <i class="bi bi-folder-x"></i>
+                                        </div>
+                                        <div class="empty-state-title fs-8">No documents uploaded</div>
+                                        <div class="empty-state-text fs-9 mb-2">No certificates, IDs, or resumes have been uploaded for this employee yet.</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: AUDIT HISTORY -->
+    <div class="tab-pane fade" id="audit-content" role="tabpanel">
+        <div class="saas-card">
+            <div class="saas-card-header">
+                <div>
+                    <h5 class="mb-0 fs-7 fw-bold">Audit & Modification History</h5>
+                    <div class="fs-9 text-secondary">Historical changes recorded for this personnel record</div>
+                </div>
+            </div>
+            <div class="saas-card-body p-3">
+                <div class="d-flex flex-column gap-3">
+                    {% for log in recent_audits %}
+                    <div class="d-flex align-items-start gap-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                        <div class="mt-1">
+                            <span class="status-badge pill-neutral fs-9">{{ log.get_action_display }}</span>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold fs-8 text-dark">{{ log.description }}</div>
+                            <div class="text-secondary fs-9 mt-1">
+                                Actor: <code>{{ log.user.username|default:"System" }}</code> &bull;
+                                Timestamp: {{ log.timestamp|date:"Y-m-d H:i:s" }} ({{ log.timestamp|timesince }} ago) &bull;
+                                IP: {{ log.ip_address|default:"127.0.0.1" }}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4 text-secondary fs-8">No specific audit entries recorded for this employee.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================================================================
+     3. UPLOAD DOCUMENT MODAL
+     ==================================================================== -->
+<div class="modal fade" id="uploadDocModal" tabindex="-1" aria-labelledby="uploadDocModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'documents:upload' employee.pk %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title fs-6 fw-bold" id="uploadDocModalLabel">
+                        <i class="bi bi-cloud-arrow-up me-2 text-primary"></i> Upload Employee Document
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Document Name <span class="required">*</span></label>
+                        <input type="text" name="document_name" class="form-control" placeholder="e.g. Master Degree Certificate, Passport Copy" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Category <span class="required">*</span></label>
+                        <select name="document_type" class="form-select" required>
+                            <option value="RESUME">Resume / CV</option>
+                            <option value="ID_PROOF">Government ID Proof</option>
+                            <option value="QUALIFICATION">Degree / Certificate</option>
+                            <option value="EXPERIENCE">Experience Certificate</option>
+                            <option value="JOINING_LETTER">Appointment / Joining Letter</option>
+                            <option value="OTHER" selected>Other Document</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">File Attachment <span class="required">*</span></label>
+                        <input type="file" name="file" class="form-control" required>
+                        <div class="form-text">PDF, DOC, DOCX, PNG, JPG (Max 5MB).</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Expiry Date (Optional)</label>
+                        <input type="date" name="expiry_date" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Remarks</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes for verification"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-cloud-arrow-up"></i> Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

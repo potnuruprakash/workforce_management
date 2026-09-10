@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Trail & Compliance — Workforce OS{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="saas-breadcrumb d-none d-md-flex">
+            <span>Governance</span>
+            <i class="bi bi-chevron-right fs-9"></i>
+            <span class="text-dark fw-semibold">Audit Trail</span>
+        </div>
+        <h1 class="h2 mb-1">System Audit & Compliance Log</h1>
+        <p class="text-secondary fs-8 mb-0">Immutable, chronological trail of personnel updates, logins, and documents.</p>
+    </div>
+    <div class="fs-8 text-secondary">
+        Total Recorded Events: <strong>{{ page_obj.paginator.count }}</strong>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="saas-card mb-3">
+    <div class="p-3">
+        <form method="GET" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-secondary"></i></span>
+                    <input type="text" name="q" value="{{ query }}" class="form-control border-start-0" placeholder="Search by description, actor, or ID...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="action" class="form-select">
+                    <option value="">All Operations</option>
+                    {% for code, label in actions %}
+                    <option value="{{ code }}" {% if action_filter == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="entity" class="form-select">
+                    <option value="">All Entities</option>
+                    <option value="Employee" {% if entity_filter == 'Employee' %}selected{% endif %}>Employee</option>
+                    <option value="Department" {% if entity_filter == 'Department' %}selected{% endif %}>Department</option>
+                    <option value="Organization" {% if entity_filter == 'Organization' %}selected{% endif %}>Organization</option>
+                    <option value="EmployeeDocument" {% if entity_filter == 'EmployeeDocument' %}selected{% endif %}>Document</option>
+                    <option value="User" {% if entity_filter == 'User' %}selected{% endif %}>User Account</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Apply</button>
+                {% if query or action_filter or entity_filter %}
+                <a href="{% url 'audit:list' %}" class="btn btn-outline-secondary btn-icon" data-bs-toggle="tooltip" title="Clear Filters">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Audit Log Presentation -->
+<div class="saas-card">
+    <div class="saas-card-body p-0">
+        <!-- DESKTOP TABLE VIEW (>= 768px) -->
+        <div class="table-responsive d-none d-md-block">
+            <table class="saas-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Tenant</th>
+                        <th>Actor</th>
+                        <th>Action</th>
+                        <th>Entity</th>
+                        <th>Event Description</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in page_obj %}
+                    <tr>
+                        <td class="fs-9 text-secondary font-monospace">{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                        <td class="fw-semibold fs-8">{{ log.organization.name|default:"Platform System" }}</td>
+                        <td><code>{{ log.user.username|default:"System" }}</code></td>
+                        <td>
+                            <span class="status-badge {% if log.action == 'CREATE' %}status-badge-active{% elif log.action == 'UPDATE' %}pill-primary{% elif log.action == 'ARCHIVE' or log.action == 'DELETE' %}status-badge-terminated{% elif log.action == 'LOGIN' %}status-badge-leave{% else %}pill-neutral{% endif %} fs-9">
+                                <span class="status-dot"></span> {{ log.get_action_display }}
+                            </span>
+                        </td>
+                        <td><span class="status-badge pill-neutral fs-9">{{ log.entity_type }}</span></td>
+                        <td class="fs-8 text-dark">{{ log.description }}</td>
+                        <td class="fs-9 text-secondary font-monospace">{{ log.ip_address|default:"127.0.0.1" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><i class="bi bi-journal-x"></i></div>
+                                <div class="empty-state-title">No audit records found</div>
+                                <div class="empty-state-text">No event logs match your query.</div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- MOBILE HUMAN-READABLE TIMELINE VIEW (< 768px) -->
+        <div class="p-3 d-md-none">
+            <div class="d-flex flex-column gap-3">
+                {% for log in page_obj %}
+                <div class="p-3 border rounded-3 bg-light bg-opacity-50">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="status-badge {% if log.action == 'CREATE' %}status-badge-active{% elif log.action == 'UPDATE' %}pill-primary{% elif log.action == 'ARCHIVE' or log.action == 'DELETE' %}status-badge-terminated{% else %}pill-neutral{% endif %} fs-9">
+                            <span class="status-dot"></span> {{ log.get_action_display }}
+                        </span>
+                        <span class="text-secondary fs-9">{{ log.timestamp|timesince }} ago</span>
+                    </div>
+                    <div class="fw-bold fs-8 text-dark mb-1">{{ log.description }}</div>
+                    <div class="text-secondary fs-9 d-flex justify-content-between pt-2 border-top">
+                        <span><i class="bi bi-person me-1"></i> {{ log.user.username|default:"System" }}</span>
+                        <span>{{ log.entity_type }} {% if log.entity_id %}(#{{ log.entity_id }}){% endif %}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state py-4">
+                    <div class="empty-state-icon"><i class="bi bi-journal-x"></i></div>
+                    <div class="empty-state-title">No audit records</div>
+                    <div class="empty-state-text">No activity has been logged yet.</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center flex-wrap gap-1">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link rounded-2" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">&larr; Prev</a></li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link rounded-2" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+            </li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link rounded-2" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Next &rarr;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

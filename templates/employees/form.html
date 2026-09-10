@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} — Workforce OS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <!-- Breadcrumb & Header -->
+        <div class="saas-breadcrumb mb-2">
+            <a href="{% url 'employees:list' %}">Staff Directory</a>
+            <i class="bi bi-chevron-right fs-9"></i>
+            <span class="text-dark fw-semibold">{{ title }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 mb-1">{{ title }}</h1>
+                <p class="text-secondary fs-8 mb-0">Record personal details, employment designation, and department assignment.</p>
+            </div>
+            <a href="{% if is_edit %}{% url 'employees:detail' employee.pk %}{% else %}{% url 'employees:list' %}{% endif %}" class="btn btn-outline-secondary">
+                Cancel
+            </a>
+        </div>
+
+        <div class="saas-card">
+            <div class="saas-card-body p-3 p-md-4">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger fs-8 mb-4">
+                        {% for err in form.non_field_errors %}
+                        <div><i class="bi bi-exclamation-circle me-1"></i> {{ err }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- SECTION 1: IDENTITY & ROLE -->
+                    <div class="pb-3 mb-4 border-bottom">
+                        <h5 class="fs-7 fw-bold text-dark mb-1"><i class="bi bi-briefcase me-2 text-primary"></i>Employment & Role</h5>
+                        <p class="text-secondary fs-9 mb-3">Institutional identity, department allocation, and status</p>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Employee ID <span class="required">*</span></label>
+                                {{ form.employee_id }}
+                                <div class="form-text">Unique for {{ organization.name }}</div>
+                                {% for err in form.employee_id.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Department <span class="required">*</span></label>
+                                {{ form.department }}
+                                {% for err in form.department.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Designation <span class="required">*</span></label>
+                                {{ form.designation }}
+                                {% for err in form.designation.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Joining Date <span class="required">*</span></label>
+                                {{ form.joining_date }}
+                                {% for err in form.joining_date.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Employment Status <span class="required">*</span></label>
+                                {{ form.employment_status }}
+                                {% for err in form.employment_status.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: PERSONAL INFORMATION -->
+                    <div class="pb-3 mb-4 border-bottom">
+                        <h5 class="fs-7 fw-bold text-dark mb-1"><i class="bi bi-person me-2 text-primary"></i>Personal Details</h5>
+                        <p class="text-secondary fs-9 mb-3">Legal name and demographic particulars</p>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Full Legal Name <span class="required">*</span></label>
+                                {{ form.full_name }}
+                                {% for err in form.full_name.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Date of Birth <span class="required">*</span></label>
+                                {{ form.date_of_birth }}
+                                {% for err in form.date_of_birth.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Gender <span class="required">*</span></label>
+                                {{ form.gender }}
+                                {% for err in form.gender.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: CONTACT INFORMATION -->
+                    <div class="pb-3 mb-4 border-bottom">
+                        <h5 class="fs-7 fw-bold text-dark mb-1"><i class="bi bi-telephone me-2 text-primary"></i>Contact Information</h5>
+                        <p class="text-secondary fs-9 mb-3">Official email and contact phone number</p>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Email Address <span class="required">*</span></label>
+                                {{ form.email }}
+                                {% for err in form.email.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Phone Number <span class="required">*</span></label>
+                                {{ form.phone_number }}
+                                {% for err in form.phone_number.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Residential Address <span class="required">*</span></label>
+                                {{ form.address }}
+                                {% for err in form.address.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: QUALIFICATIONS & PHOTO -->
+                    <div class="mb-4">
+                        <h5 class="fs-7 fw-bold text-dark mb-1"><i class="bi bi-mortarboard me-2 text-primary"></i>Credentials & Biography</h5>
+                        <p class="text-secondary fs-9 mb-3">Academic credentials, summary and profile image</p>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Highest Qualification <span class="required">*</span></label>
+                                {{ form.qualification }}
+                                {% for err in form.qualification.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Profile Photo</label>
+                                {{ form.profile_photo }}
+                                <div class="form-text">JPG, PNG under 5MB</div>
+                                {% for err in form.profile_photo.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Professional Biography</label>
+                                {{ form.bio }}
+                                {% for err in form.bio.errors %}<div class="text-danger fs-9 mt-1">{{ err }}</div>{% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submission Controls -->
+                    <div class="d-flex flex-column-reverse flex-sm-row justify-content-end gap-2 pt-3 border-top">
+                        <a href="{% if is_edit %}{% url 'employees:detail' employee.pk %}{% else %}{% url 'employees:list' %}{% endif %}" class="btn btn-secondary w-100 w-sm-auto">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary w-100 w-sm-auto px-4">
+                            {% if is_edit %}Save Updates{% else %}Create Employee Record{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

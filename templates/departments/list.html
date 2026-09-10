@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Departments — {{ organization.name }} — Workforce OS{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="saas-breadcrumb d-none d-md-flex">
+            <span>{{ organization.name }}</span>
+            <i class="bi bi-chevron-right fs-9"></i>
+            <span class="text-dark fw-semibold">Departments</span>
+        </div>
+        <h1 class="h2 mb-1">Departments & Divisions</h1>
+        <p class="text-secondary fs-8 mb-0">Organizational units and department managers for <strong>{{ organization.name }}</strong>.</p>
+    </div>
+
+    {% if is_org_admin %}
+    <div class="w-100 w-md-auto">
+        <a href="{% url 'departments:create' %}" class="btn btn-primary w-100 w-md-auto">
+            <i class="bi bi-plus-lg"></i> Add Department
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Search & Status Filter -->
+<div class="saas-card mb-3">
+    <div class="p-3">
+        <form method="GET" class="row g-2 align-items-center">
+            <div class="col-md-7">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-secondary"></i></span>
+                    <input type="text" name="q" value="{{ query }}" class="form-control border-start-0" placeholder="Search by department name or code...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="active" {% if status == 'active' %}selected{% endif %}>Active Only</option>
+                    <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Apply</button>
+                {% if query or status %}
+                <a href="{% url 'departments:list' %}" class="btn btn-outline-secondary btn-icon" data-bs-toggle="tooltip" title="Clear Filters">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- DESKTOP TABLE VIEW (>= 768px) -->
+<div class="saas-card d-none d-md-block">
+    <div class="table-responsive">
+        <table class="saas-table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Code</th>
+                    <th>Head / Manager</th>
+                    <th>Staff Assigned</th>
+                    <th>Status</th>
+                    {% if is_org_admin %}<th class="text-end">Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for dept in page_obj %}
+                <tr>
+                    <td>
+                        <div class="fw-semibold text-dark fs-8">{{ dept.name }}</div>
+                        {% if dept.description %}<div class="text-secondary fs-9 text-truncate" style="max-width: 280px;">{{ dept.description }}</div>{% endif %}
+                    </td>
+                    <td><code>{{ dept.code }}</code></td>
+                    <td>
+                        {% if dept.manager %}
+                        <a href="{% url 'employees:detail' dept.manager.pk %}" class="text-dark text-decoration-none fs-8 fw-medium">
+                            <i class="bi bi-person text-primary me-1"></i> {{ dept.manager.full_name }}
+                        </a>
+                        {% else %}
+                        <span class="text-secondary fs-9">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'employees:list' %}?department={{ dept.pk }}" class="status-badge pill-neutral fs-9 text-decoration-none">
+                            {{ dept.emp_count }} Personnel
+                        </a>
+                    </td>
+                    <td>
+                        {% if dept.is_active %}
+                        <span class="status-badge status-badge-active fs-9"><span class="status-dot"></span> Active</span>
+                        {% else %}
+                        <span class="status-badge status-badge-archived fs-9"><span class="status-dot"></span> Inactive</span>
+                        {% endif %}
+                    </td>
+                    {% if is_org_admin %}
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'departments:edit' dept.pk %}" class="btn btn-outline-secondary btn-icon" data-bs-toggle="tooltip" title="Edit Department">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button type="button" class="btn btn-outline-secondary btn-icon text-danger"
+                                data-bs-toggle="modal"
+                                data-bs-target="#actionConfirmModal"
+                                data-action-url="{% url 'departments:delete' dept.pk %}"
+                                data-action-title="Delete Department"
+                                data-action-message="Are you sure you want to delete <strong>{{ dept.name }} ({{ dept.code }})</strong>? {% if dept.emp_count > 0 %}<div class='alert alert-warning mt-2 fs-9'>Warning: This department contains {{ dept.emp_count }} employee(s). The system will safely reject deletion until employees are reassigned.</div>{% endif %}"
+                                data-action-btn-text="Delete Department"
+                                data-action-btn-class="btn-danger"
+                                data-bs-tooltip="tooltip"
+                                title="Delete Department">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-diagram-3"></i></div>
+                            <div class="empty-state-title">No departments found</div>
+                            <div class="empty-state-text">No departments match your filter parameters.</div>
+                            {% if is_org_admin %}
+                            <a href="{% url 'departments:create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Department</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MOBILE CARDS VIEW (< 768px) -->
+<div class="d-md-none">
+    {% for dept in page_obj %}
+    <div class="mobile-employee-card">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+                <div class="fw-bold fs-7 text-dark">{{ dept.name }}</div>
+                <div class="text-secondary fs-9">Code: <code>{{ dept.code }}</code></div>
+            </div>
+            {% if dept.is_active %}
+            <span class="status-badge status-badge-active fs-9"><span class="status-dot"></span> Active</span>
+            {% else %}
+            <span class="status-badge status-badge-archived fs-9"><span class="status-dot"></span> Inactive</span>
+            {% endif %}
+        </div>
+
+        <div class="fs-8 text-secondary mb-2">
+            Head: <span class="text-dark fw-medium">{{ dept.manager.full_name|default:"Unassigned" }}</span>
+        </div>
+
+        <div class="mobile-card-actions justify-content-between align-items-center">
+            <a href="{% url 'employees:list' %}?department={{ dept.pk }}" class="status-badge pill-neutral fs-9 text-decoration-none">
+                {{ dept.emp_count }} Personnel Assigned
+            </a>
+            {% if is_org_admin %}
+            <div class="d-flex gap-1">
+                <a href="{% url 'departments:edit' dept.pk %}" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-9">
+                    <i class="bi bi-pencil"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="bi bi-diagram-3"></i></div>
+        <div class="empty-state-title">No departments found</div>
+        <div class="empty-state-text">No departments match your criteria.</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center flex-wrap gap-1">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link rounded-2" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">&larr; Prev</a></li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link rounded-2" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+            </li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link rounded-2" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Next &rarr;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
